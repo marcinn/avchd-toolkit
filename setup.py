@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
         name='avchd-toolkit',
-        version='0.1',
+        version='0.1.1',
         author='Marcin Nowak',
         author_email='marcin.j.nowak@gmail.com',
         zip_safe=True,
@@ -32,6 +32,6 @@ setup(
             'avchdtrans': ['codecs.ini'],
             },
         install_requires=[
-            'futures>=3.0.0<4.0.0',
+            'futures>=3.0.0,<4.0.0',
             ],
         )
