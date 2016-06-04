@@ -1,0 +1,17 @@
+#!/bin/env python
+
+import os
+import sys
+
+sys.path.append(os.getcwd())
+
+
+if __name__ == '__main__':
+    from avchdrenamer.cmdline import main, CommandError
+    try:
+        main()
+    except CommandError,ex:
+        RESET_SEQ = "\033[0m"
+        COLOR_SEQ = "\033[91m"
+        sys.stdout.write(COLOR_SEQ+unicode(ex)+RESET_SEQ+'\n')
+

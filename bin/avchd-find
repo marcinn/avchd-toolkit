@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ $# -le 0 ]; then
+    echo "usage: $0 DIRECTORY"
+    exit
+fi
+
+find ${1:-"."} -maxdepth 1 -regextype posix-egrep -regex ".*/[0-9]{5}\.MTS"
+

@@ -35,6 +35,11 @@ def make_parser():
     )
 
     parser.add_argument(
+        '-r', '--rename', dest='rename', action='store_true',
+        help='enable automagical renaming files based on original shot time',
+    )
+
+    parser.add_argument(
         '-x', '--export-dir', dest='export_dir', action='store', type=str,
         help='export/output directory (default: same as original file)',
     )
