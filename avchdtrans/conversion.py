@@ -174,6 +174,8 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
     if timecode is not None:
         tc = timecode
     else:
+        sys.stdout.write('Extracting timecode data from "%s"\n' % infile)
+        sys.stdout.flush()
         tc = extract_timecode(infile)
 
     if tc:

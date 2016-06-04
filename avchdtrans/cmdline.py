@@ -115,7 +115,7 @@ def main():
     parser = make_parser()
     args = parser.parse_args()
 
-    kwargs = dict(vars(args)) # copy
+    kwargs = vars(args)
     files = kwargs.pop('inputs')
     source_dir = kwargs.pop('source_dir')
     source_extensions = kwargs.pop('source_extensions')
