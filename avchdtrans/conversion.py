@@ -159,8 +159,10 @@ def container_factory(profile, meta=None):
 
 
 def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
-        timecode=None, outfile=None, force_overwrite=False, export_dir=None):
+        timecode=None, outfile=None, force_overwrite=False, export_dir=None,
+        rename=False):
 
+    import avchdrenamer
 
     c = container_factory(profile=profile)
     v = video_factory(profile=profile, quality=quality, pix_fmt=pix_fmt)
@@ -185,7 +187,13 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
         metahandler.set_tags(c, dict(meta))
 
     if not outfile:
-        base,ext = os.path.splitext(infile)
+        if rename:
+            outfile = avchdrenamer.fix_name(infile)
+        else:
+            outfile = infile
+
+        base,ext = os.path.splitext(outfile)
+
         if export_dir:
             if not os.path.exists(export_dir):
                 os.makedirs(export_dir)

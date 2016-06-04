@@ -86,6 +86,7 @@ def make_parser():
 
 def main():
 
+    import pkg_resources
     from .profiles import load_profiles_config
     from .conversion import execute
 
@@ -93,6 +94,7 @@ def main():
             os.path.join(os.path.expanduser('~'), '.config', 'avchdtranscode', 'codecs.ini'),
             os.path.sep+os.path.join('etc', 'avchdtrans', 'codecs.ini'),
             os.environ.get('AVCHDTRANSCODE_CODECS', None),
+            pkg_resources.resource_filename('avchdtrans', 'codecs.ini'),
         )
 
     load_profiles_config(paths=configs)
