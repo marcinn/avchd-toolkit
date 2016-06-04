@@ -10,7 +10,7 @@ from .timecode import extract_timecode
 class Medium(object):
     def __init__(self, meta=None, ffmpeg_args=None):
         self.meta = {}
-        self.ffmpeg_args = ffmpeg_args or []
+        self.ffmpeg_args = list(ffmpeg_args or []) # copy
 
     def _metadata_argname(self):
         return '-metadata'

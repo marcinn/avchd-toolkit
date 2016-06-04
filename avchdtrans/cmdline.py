@@ -115,7 +115,7 @@ def main():
     parser = make_parser()
     args = parser.parse_args()
 
-    kwargs = vars(args)
+    kwargs = dict(vars(args)) # copy
     files = kwargs.pop('inputs')
     source_dir = kwargs.pop('source_dir')
     source_extensions = kwargs.pop('source_extensions')
@@ -162,4 +162,4 @@ def main():
 
     else:
         for infile in files:
-            execute(infile, **vars(args))
+            execute(infile, **kwargs)
