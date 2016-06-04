@@ -21,7 +21,7 @@ def make_parser():
     parser = argparse.ArgumentParser(description='Transcode wrapper for FFMPEG')
 
 
-    parser.add_argument('inputs', type=str, nargs='+',
+    parser.add_argument('inputs', type=str, nargs='*',
         help='Input file paths', metavar='FILE')
 
     parser.add_argument('-o', '--outfile', type=str,
@@ -37,6 +37,17 @@ def make_parser():
     parser.add_argument(
         '-r', '--rename', dest='rename', action='store_true',
         help='enable automagical renaming files based on original shot time',
+    )
+
+    parser.add_argument(
+        '-s', '--source-dir', dest='source_dir', action='store', type=str,
+        help='source directory for batch processing',
+    )
+    
+    parser.add_argument(
+        '--ext', dest='source_extensions', action='append', type=str,
+        help='add source file extension for batch processing (default: %(default)s)',
+        default=['MTS', 'mts'],
     )
 
     parser.add_argument(
@@ -64,6 +75,7 @@ def make_parser():
     parser.add_argument(
         '-m', '--meta', dest='meta', action='append', type=assignment,
         help='add meta tag (use multiple options for setting more tags at once)',
+        default=[],
         )
 
     parser.add_argument(
@@ -89,6 +101,7 @@ def main():
     import pkg_resources
     from .profiles import load_profiles_config
     from .conversion import execute
+    from .finder import find_files
 
     configs = (
             os.path.join(os.path.expanduser('~'), '.config', 'avchdtranscode', 'codecs.ini'),
@@ -104,7 +117,25 @@ def main():
 
     kwargs = vars(args)
     files = kwargs.pop('inputs')
+    source_dir = kwargs.pop('source_dir')
+    source_extensions = kwargs.pop('source_extensions')
     parallel = kwargs.pop('parallel')
+
+    if files and source_dir:
+        raise CommandError('You can\'t use batch mode together with processing individual files')
+
+    if source_dir:
+        files = find_files(source_dir, source_extensions)
+
+        # read reel_name for batch processing
+        if not args.meta or not 'reel' in dict(args.meta):
+            try:
+                with open(os.path.join(source_dir, '.reel_name')) as fh:
+                    reel_name = fh.readline()
+            except IOError:
+                pass
+            else:
+                kwargs['meta'].append(('reel', reel_name))
 
     if len(files)>1:
         if not args.export_dir:
