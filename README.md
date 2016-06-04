@@ -1,2 +1,2 @@
-# ffmpeg-transcode
-prototype of transcoding utility based on ffmpeg
+# avchd-toolkit
+prototype of utilities to improve avchd-based workflow
