@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
         name='avchd-toolkit',
-        version='0.1.1',
+        version='0.1.2',
         author='Marcin Nowak',
         author_email='marcin.j.nowak@gmail.com',
         zip_safe=True,
-        url='https://github.com/marcinn/cando',
+        url='https://github.com/marcinn/avchd-transcode',
         description='Simple tools to help with prosumer cameras workflow (like working with Canon C100` files)',
         classifiers=[
             'Development Status :: 3 - Alpha',
@@ -26,6 +26,7 @@ setup(
             'console_scripts': [
                 'avchd-renamer = avchdrenamer.cmdline:main',
                 'avchd-transcode = avchdtrans.cmdline:main',
+                'avchd-extract-tc = avchdtrans.commands.extract_timecodes:main',
                 ],
             },
         packages=find_packages('.', exclude=('tests','tests.*')),

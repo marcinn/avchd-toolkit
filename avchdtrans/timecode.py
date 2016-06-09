@@ -1,4 +1,10 @@
+import csv
+import os
 from . import exiftool
+
+
+class NoTimecodeFound(Exception):
+    pass
 
 
 NON_NATIVE_TC_MIMETYPES = (
@@ -8,6 +14,31 @@ NON_NATIVE_TC_MIMETYPES = (
         'video/m4v',
         )
 
+
+def read_timecode_from_database(infile):
+    dbfile = os.path.join(os.path.dirname(infile), '.timecodes')
+    basename = os.path.basename(infile)
+
+    try:
+        fh = open(dbfile)
+    except IOError:
+        raise NoTimecodeFound
+
+    tcreader=csv.reader(fh)
+    for fname,tc in tcreader:
+        if fname==basename:
+            fh.close()
+            return tc
+
+    fh.close()
+    raise NoTimecodeFound
+
+
+def write_timecodes_to_database(directory, timecodes):
+    with open(os.path.join(directory, '.timecodes'), 'w') as fh:
+        tcwriter = csv.writer(fh)
+        for path,tc in timecodes:
+            tcwriter.writerow([os.path.basename(path),tc])
 
 
 def extract_timecode(infile):
@@ -22,6 +53,5 @@ def extract_timecode(infile):
                 return
         else:
             return et.get_tag('TimeCode', infile)
-
 
 

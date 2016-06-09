@@ -4,7 +4,7 @@ import sys
 from .profiles import registry
 from .ffmpeg import execute_ffmpeg
 from .metadata import metadatahandler_factory
-from .timecode import extract_timecode
+from . import timecode as timecode_mod
 
 
 class Medium(object):
@@ -122,6 +122,12 @@ CONTAINERS = {
             'ffmpeg_args': [
                 ('-f','mxf'),
             ],
+            },
+        'avc': {
+            'fileext': 'MXF',
+            'ffmpeg_args': [
+                ('-f','mxf'),
+            ],
         }
     }
 
@@ -176,7 +182,11 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
     else:
         sys.stdout.write('Extracting timecode data from "%s"\n' % infile)
         sys.stdout.flush()
-        tc = extract_timecode(infile)
+
+        try:
+            tc = timecode_mod.read_timecode_from_database(infile)
+        except timecode_mod.NoTimecodeFound:
+            tc = timecode_mod.extract_timecode(infile)
 
     if tc:
         c.add_args('-timecode', tc)
@@ -190,7 +200,7 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
 
     if not outfile:
         if rename:
-            outfile = avchdrenamer.fix_name(infile)
+            outfile = avchdrenamer.prettify_filename(infile)
         else:
             outfile = infile
 

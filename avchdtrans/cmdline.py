@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+from . import profiles
 
 try:
     from concurrent import futures
@@ -18,15 +19,45 @@ class CommandError(Exception):
 
 def make_parser():
 
-    parser = argparse.ArgumentParser(description='Transcode wrapper for FFMPEG')
+    try:
+        default_profile, default_quality = profiles.registry.default_key()
+    except TypeError:
+        default_profile=None
+        default_quality=None
 
+
+    class HelpAction(argparse._HelpAction):
+        def __call__(self, parser, *args, **kw):
+            print parser.format_help()
+            print "\nAvailable profiles:\n"
+
+            for profile, quality in profiles.registry.registered_keys():
+                desc = profiles.registry.description(profile, quality) or 'no description'
+                print "\"%s:%s\"  (%s)" % (profile, quality, desc)
+
+            sys.exit(0)
+
+    parser = argparse.ArgumentParser(
+            description='Transcode wrapper for FFMPEG', add_help=False)
+    parser.add_argument('-h', '--help', action=HelpAction,
+            help='show this help message and exit')
 
     parser.add_argument('inputs', type=str, nargs='*',
         help='Input file paths', metavar='FILE')
+    parser.add_argument(
+        '-s', '--source-dir', dest='source_dir', action='store', type=str,
+        help='source directory for batch processing', required=False,
+    )
 
-    parser.add_argument('-o', '--outfile', type=str,
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('-o', '--outfile', type=str,
         help='Output file path (default: basename of input with changed extension)',
     )
+    group.add_argument(
+        '-x', '--export-dir', dest='export_dir', action='store', type=str,
+        help='export/output directory (default: same as original file)',
+    )
+
 
     parser.add_argument(
         '-d', '--deshake', dest='deshake', action='store', type=int,
@@ -39,26 +70,18 @@ def make_parser():
         help='enable automagical renaming files based on original shot time',
     )
 
-    parser.add_argument(
-        '-s', '--source-dir', dest='source_dir', action='store', type=str,
-        help='source directory for batch processing',
-    )
-    
+
     parser.add_argument(
         '--ext', dest='source_extensions', action='append', type=str,
         help='add source file extension for batch processing (default: %(default)s)',
         default=['MTS', 'mts'],
     )
 
-    parser.add_argument(
-        '-x', '--export-dir', dest='export_dir', action='store', type=str,
-        help='export/output directory (default: same as original file)',
-    )
 
     parser.add_argument(
         '-q', '--quality', dest='quality', action='store',
-        help='transcoding quality (default: %(default)s)', default='high',
-        choices=['proxy', 'low', 'standard', 'high'],
+        help='transcoding quality (default: %(default)s)',
+        default=default_quality,
     )
 
     parser.add_argument(
@@ -68,8 +91,8 @@ def make_parser():
 
     parser.add_argument(
         '-f', '--profile', dest='profile', action='store',
-        help='output profile name (default: %(default)s)', default='prores',
-        choices=['prores', 'dnxhd', 'mpeg'],
+        help='output profile name (default: %(default)s)',
+        default=default_profile,
     )
 
     parser.add_argument(
@@ -97,6 +120,16 @@ def make_parser():
 
 
 def main():
+    try:
+        handle_main()
+    except CommandError, ex:
+        RESET_SEQ = "\033[0m"
+        COLOR_SEQ = "\033[91m"
+        sys.stdout.write(COLOR_SEQ+unicode(ex)+RESET_SEQ+'\n')
+        sys.stdout.flush()
+
+
+def handle_main():
 
     import pkg_resources
     from .profiles import load_profiles_config
