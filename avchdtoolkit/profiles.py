@@ -2,24 +2,33 @@
 Codecs database mgmt
 """
 
-import collections
 import os
+
+
+class Profile(object):
+    def __init__(self,
+            container, description=None, audio_args=None, video_args=None):
+        self.container = container
+        self.description = description
+        self.ffmpeg_args = {
+                'audio': list(audio_args or []),
+                'video': list(video_args or []),
+                }
 
 
 class ProfilesRegistry(object):
     def __init__(self):
         self.clear()
 
-    def register(self, name, quality, medium, ffmpeg_args):
-        if not (name,quality) in self._codecs_list:
-            self._codecs_list.append((name, quality))
-        self._codecs[name][quality][medium]=list(ffmpeg_args)
+    def register(self, name, profile):
 
-    def register_description(self, name, quality, description):
-        self._descriptions['%s:%s' % (name,quality)]=description
+        if not name in self._codecs_list:
+            self._codecs_list.append(name)
 
-    def get(self, name, quality):
-        return self._codecs[name][quality]
+        self._codecs[name]=profile
+
+    def get(self, name):
+        return self._codecs[name]
 
     def registered_keys(self):
         return self._codecs_list[:]
@@ -31,16 +40,15 @@ class ProfilesRegistry(object):
     def default_key(self):
         return self._codecs_list[0]
 
-    def description(self, name, quality):
-        return self._descriptions.get('%s:%s' % (name, quality)) or ''
+    def description(self, name):
+        return self.get(name).description or ''
 
-    def get_ffmpeg_args(self, name, quality, medium):
-        return self.get(name, quality)[medium]
+    def get_ffmpeg_args(self, name, medium):
+        return self.get(name).ffmpeg_args[medium]
 
     def clear(self):
-        self._codecs = collections.defaultdict(lambda: collections.defaultdict(dict))
+        self._codecs = {}
         self._codecs_list = []
-        self._descriptions = {}
 
 
 registry = ProfilesRegistry()
@@ -60,20 +68,28 @@ def load_profiles_config(paths):
 
     registry.clear()
 
-    for section in cp.sections():
-        profile, quality = section.split(':')
-        for medium, args in cp.items(section):
-            if medium in ('audio', 'video'):
-                ffmpeg_args = map(
-                    lambda x: filter(None, map(lambda y: y.strip(), x.split(' '))),
-                    args.split('\n')
-                )
-                registry.register(profile, quality, medium, filter(None, ffmpeg_args))
+    def parse_args(args):
+        return filter(None, map(
+            lambda x: filter(None, map(lambda y: y.strip(), x.split(' '))),
+            args.split('\n')
+        ))
+
+    def getopt(section, name):
         try:
-            desc = cp.get(section, 'description')
+            return cp.get(section, name)
         except ConfigParser.NoOptionError:
-            pass
-        else:
-            registry.register_description(profile, quality, desc)
+            return
+
+    for profile_name in cp.sections():
+        video_args = parse_args(cp.get(profile_name, 'video'))
+        audio_args = parse_args(cp.get(profile_name, 'audio'))
+        container = cp.get(profile_name, 'container')
+        description = getopt(profile_name, 'description')
+
+        profile = Profile(
+                container=container, description=description,
+                audio_args=audio_args, video_args=video_args)
+
+        registry.register(profile_name, profile)
 
 

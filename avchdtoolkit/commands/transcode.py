@@ -17,10 +17,9 @@ def assignment(x):
 def make_parser():
 
     try:
-        default_profile, default_quality = profiles.registry.default_key()
+        default_profile = profiles.registry.default_key()
     except TypeError:
         default_profile=None
-        default_quality=None
 
 
     class HelpAction(argparse._HelpAction):
@@ -28,9 +27,9 @@ def make_parser():
             print parser.format_help()
             print "\nAvailable profiles:\n"
 
-            for profile, quality in profiles.registry.registered_keys():
-                desc = profiles.registry.description(profile, quality) or 'no description'
-                print "\"%s:%s\"  (%s)" % (profile, quality, desc)
+            for profile in profiles.registry.registered_keys():
+                desc = profiles.registry.description(profile) or 'no description'
+                print("{:<20} {}".format(profile, desc))
 
             sys.exit(0)
 
@@ -39,21 +38,11 @@ def make_parser():
     parser.add_argument('-h', '--help', action=HelpAction,
             help='show this help message and exit')
 
-    parser.add_argument('inputs', type=str, nargs='*',
-        help='Input file paths', metavar='FILE')
-    parser.add_argument(
-        '-s', '--source-dir', dest='source_dir', action='store', type=str,
-        help='source directory for batch processing', required=False,
-    )
+    parser.add_argument('inputs', type=str, nargs='+',
+        help='Input files or directories', metavar='INPUT')
 
-    group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument('-o', '--outfile', type=str,
-        help='Output file path (default: basename of input with changed extension)',
-    )
-    group.add_argument(
-        '-x', '--export-dir', dest='export_dir', action='store', type=str,
-        help='export/output directory (default: same as original file)',
-    )
+    parser.add_argument('output', type=str,
+        help='Output directory', metavar='OUTPUT')
 
     #parser.add_argument(
     #    '-d', '--deshake', dest='deshake', action='store', type=int,
@@ -66,28 +55,9 @@ def make_parser():
         help='enable automagical renaming files based on original shot time',
     )
 
-
     parser.add_argument(
-        '--ext', dest='source_extensions', action='append', type=str,
-        help='add source file extension for batch processing (default: %(default)s)',
-        default=['MTS', 'mts'],
-    )
-
-
-    parser.add_argument(
-        '-q', '--quality', dest='quality', action='store',
-        help='transcoding quality (default: %(default)s)',
-        default=default_quality,
-    )
-
-    parser.add_argument(
-        '--pix_fmt', dest='pix_fmt', action='store', type=str,
-        help='pix fmt (default: auto)',
-    )
-
-    parser.add_argument(
-        '-f', '--profile', dest='profile', action='store',
-        help='output profile name (default: %(default)s)',
+        '-p', '--profile', dest='profile', action='store',
+        help='output profile name (default: "%(default)s")',
         default=default_profile,
     )
 
@@ -110,6 +80,11 @@ def make_parser():
     parser.add_argument(
         '--parallel', dest='parallel', action='store_true', default=False,
         help='Use experimental multiprocessing (default: %(default)s)',
+    )
+
+    parser.add_argument(
+        '--pix_fmt', dest='pix_fmt', action='store', type=str,
+        help='pix fmt (default: auto)',
     )
 
     return parser
@@ -135,34 +110,39 @@ def main():
     parser = make_parser()
     args = parser.parse_args()
 
-    kwargs = vars(args)
-    files = kwargs.pop('inputs')
-    source_dir = kwargs.pop('source_dir')
-    source_extensions = kwargs.pop('source_extensions')
-    parallel = kwargs.pop('parallel')
+    userargs = dict(vars(args)) # copy
+    inputs = userargs.pop('inputs')
+    parallel = userargs.pop('parallel')
+    usermeta = dict(userargs.pop('meta'))
 
-    if files and source_dir:
-        raise CommandError('You can\'t use batch mode together with processing individual files')
+    batch = []
 
-    if source_dir:
-        files = find_files(source_dir, source_extensions)
+    for path in inputs:
+        if os.path.isdir(path):
+            files = find_files(path)
 
-        # read reel_name for batch processing
-        if not args.meta or not 'reel' in dict(args.meta):
+            meta = {}
+
+            # read reel_name for batch processing
             try:
-                with open(os.path.join(source_dir, '.reel_name')) as fh:
-                    reel_name = fh.readline()
+                with open(os.path.join(path, '.reel_name')) as fh:
+                    reel_name = fh.readline().strip()
             except IOError:
                 pass
             else:
-                kwargs['meta'].append(('reel', reel_name))
+                meta['reel'] = reel_name
 
-    if len(files)>1:
-        if not args.export_dir:
-            raise CommandError('You must set export dir (-x) for multiple inputs')
+            meta.update(usermeta)
 
-        if args.outfile:
-            raise CommandError('You can\'t use output filename for multiple inputs')
+            for filename in files:
+                data = {'infile': filename, 'meta': meta}
+                data.update(userargs)
+                batch.append(data)
+        else:
+            data = {'infile': path, 'meta': usermeta}
+            data.update(userargs)
+            batch.append(data)
+
 
     if parallel:
         if not futures:
@@ -174,12 +154,13 @@ def main():
         asyncs = []
 
         with futures.ProcessPoolExecutor() as ex:
-            for infile in files:
-                asyncs.append(ex.submit(execute, infile, **vars(args)))
+            for cmdargs in batch:
+                asyncs.append(ex.submit(execute, **cmdargs))
 
         for obj in asyncs:
             obj.result() # raise exception if failed
 
     else:
-        for infile in files:
-            execute(infile, **kwargs)
+        for cmdargs in batch:
+            execute(**cmdargs)
+

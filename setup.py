@@ -26,7 +26,7 @@ setup(
             'console_scripts': [
                 'avchd-rename = avchdtoolkit.commands.rename:main',
                 'avchd-transcode = avchdtoolkit.commands.transcode:main',
-                'avchd-extract-tc = avchdtoolkit.commands.extract_timecodes:main',
+                'avchd-extract-timecodes = avchdtoolkit.commands.extract_timecodes:main',
                 ],
             },
         packages=find_packages('.', exclude=('tests','tests.*')),

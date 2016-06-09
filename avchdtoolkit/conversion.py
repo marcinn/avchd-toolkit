@@ -73,11 +73,10 @@ class Container(Medium):
 
 
 class Video(Medium):
-    def __init__(self, profile, quality, pix_fmt=None, **kw):
+    def __init__(self, profile, pix_fmt=None, **kw):
         super(Video, self).__init__(**kw)
 
         self.profile = profile
-        self.quality = quality
         self.pix_fmt = pix_fmt
         self.stream = 0
 
@@ -93,11 +92,10 @@ class Video(Medium):
 
 
 class Audio(Medium):
-    def __init__(self, profile, quality, **kw):
+    def __init__(self, profile, **kw):
         super(Audio, self).__init__(**kw)
 
         self.profile = profile
-        self.quality = quality
         self.stream = 0
 
     def _metadata_argname(self):
@@ -105,58 +103,47 @@ class Audio(Medium):
 
 
 CONTAINERS = {
-        'prores': {
+        'mov': {
             'fileext': 'MOV',
             'ffmpeg_args': [
                 ('-f', 'mov'),
             ],
             },
-        'mpeg': {
+        'mxf': {
             'fileext': 'MXF',
             'ffmpeg_args': [
                 ('-f','mxf'),
             ],
             },
-        'dnxhd': {
-            'fileext': 'MXF',
-            'ffmpeg_args': [
-                ('-f','mxf'),
-            ],
-            },
-        'avc': {
-            'fileext': 'MXF',
-            'ffmpeg_args': [
-                ('-f','mxf'),
-            ],
         }
-    }
 
 
-def video_factory(profile, quality='high', pix_fmt=None, meta=None):
+def video_factory(profile, pix_fmt=None, meta=None):
 
     try:
-        profile_args = registry.get_ffmpeg_args(profile, quality, 'video')
+        profile_args = registry.get_ffmpeg_args(profile, 'video')
     except KeyError:
-        raise KeyError('Unsupported profile/quality pair: `%s:%s`' % (profile, quality))
+        raise KeyError('Profile is not defined: `%s:%s`' % profile)
 
-    return Video(profile=profile, quality=quality, pix_fmt=pix_fmt,
+    return Video(profile=profile, pix_fmt=pix_fmt,
             meta=meta, ffmpeg_args=profile_args)
 
 
-def audio_factory(profile, quality='high', meta=None):
+def audio_factory(profile, meta=None):
 
     try:
-        profile_args = registry.get_ffmpeg_args(profile, quality, 'audio')
+        profile_args = registry.get_ffmpeg_args(profile, 'audio')
     except KeyError:
-        raise KeyError('Unsupported profile/quality pair: `%s:%s`' % (profile, quality))
+        raise KeyError('Profile is not defined: `%s:%s`' % profile)
 
     return Audio(
-            profile=profile, quality=quality, meta=meta, ffmpeg_args=profile_args)
+            profile=profile, meta=meta, ffmpeg_args=profile_args)
 
 
-def container_factory(profile, meta=None):
+def container_factory(profile_name, meta=None):
+    profile = registry.get(profile_name)
     try:
-        args = CONTAINERS[profile]
+        args = CONTAINERS[profile.container]
     except KeyError:
         raise KeyError('Profile `%s` has no container defined' % profile)
 
@@ -164,15 +151,15 @@ def container_factory(profile, meta=None):
 
 
 
-def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
-        timecode=None, outfile=None, force_overwrite=False, export_dir=None,
-        rename=False):
+def execute(infile, output, profile, deshake=None, meta=None,
+        timecode=None, force_overwrite=False, export_dir=None,
+        rename=False, pix_fmt=None):
 
     import renamer
 
-    c = container_factory(profile=profile)
-    v = video_factory(profile=profile, quality=quality, pix_fmt=pix_fmt)
-    a = audio_factory(profile=profile, quality=quality)
+    c = container_factory(profile_name=profile)
+    v = video_factory(profile=profile, pix_fmt=pix_fmt)
+    a = audio_factory(profile=profile)
 
     c.add_audio(a)
     c.add_video(v)
@@ -180,9 +167,6 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
     if timecode is not None:
         tc = timecode
     else:
-        sys.stdout.write('Extracting timecode data from "%s"\n' % infile)
-        sys.stdout.flush()
-
         try:
             tc = timecode_mod.read_timecode_from_database(infile)
         except timecode_mod.NoTimecodeFound:
@@ -198,23 +182,30 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
         metahandler = metadatahandler_factory(profile)
         metahandler.set_tags(c, dict(meta))
 
-    if not outfile:
-        if rename:
-            outfile = renamer.prettify_filename(infile)
-        else:
-            outfile = infile
+    if rename:
+        outfile = renamer.prettify_filename(infile)
+    else:
+        outfile = infile
 
-        base,ext = os.path.splitext(outfile)
+    base,ext = os.path.splitext(outfile)
 
-        if export_dir:
-            if not os.path.exists(export_dir):
-                os.makedirs(export_dir)
-            base = os.path.join(export_dir, os.path.basename(base))
-        outfile = u'%s.%s' % (base, c.fileext)
+    if not os.path.exists(output):
+        os.makedirs(output)
+    base = os.path.join(output, os.path.basename(base))
+    outfile = u'%s.%s' % (base, c.fileext)
 
-    sys.stdout.write('Transcoding "%s"->"%s" using %s@%s\n' % (infile, outfile, profile, quality))
-    sys.stdout.flush()
+    print(80*'-')
+    print('Transcoding %s' % infile)
+    print('  to %s' % outfile)
+    print('  using REEL=%s, TIMECODE=%s, PROFILE=%s' % (
+        meta.get('reel') or '(not set)',
+        tc or '(not set)',
+        profile))
+
+    if os.path.exists(outfile) and not force_overwrite:
+        answer = raw_input('File exists. Overwrite? (y/N)')
+        if not answer.lower()=='y':
+            return
+
     execute_ffmpeg(infile, c, outfile)
-    sys.stdout.write('Finished transcoding "%s"\n' % infile)
-    sys.stdout.flush()
 

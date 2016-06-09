@@ -7,6 +7,8 @@ def execute_ffmpeg(infile, container, outfile, ffmpeg='ffmpeg'):
             '-hide_banner',
             '-i', infile,
             '-loglevel', 'quiet',
+            '-y',
+            '-stats',
             ]
     args += container.video_args()
     args += container.audio_args()
@@ -14,7 +16,7 @@ def execute_ffmpeg(infile, container, outfile, ffmpeg='ffmpeg'):
     args += [outfile]
 
     p = subprocess.Popen(
-            [ffmpeg]+args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            [ffmpeg]+args) # stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     return p.communicate()
 
