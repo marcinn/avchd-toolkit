@@ -2,7 +2,7 @@ import datetime
 import os
 import re
 
-from avchdtrans import exiftool
+from . import exiftool
 
 
 DATE_PATTERNS = (

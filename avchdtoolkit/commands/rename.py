@@ -37,7 +37,7 @@ def make_parser():
 
 @command
 def main():
-    from . import renamer
+    from .. import renamer
 
     parser = make_parser()
     args = parser.parse_args()

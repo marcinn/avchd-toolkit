@@ -24,14 +24,14 @@ setup(
             ],
         entry_points = {
             'console_scripts': [
-                'avchd-rename = avchdtrans.commands.rename:main',
-                'avchd-transcode = avchdtrans.commands.transcode:main',
-                'avchd-extract-tc = avchdtrans.commands.extract_timecodes:main',
+                'avchd-rename = avchdtoolkit.commands.rename:main',
+                'avchd-transcode = avchdtoolkit.commands.transcode:main',
+                'avchd-extract-tc = avchdtoolkit.commands.extract_timecodes:main',
                 ],
             },
         packages=find_packages('.', exclude=('tests','tests.*')),
         package_data={
-            'avchdtrans': ['codecs.ini'],
+            'avchdtoolkit': ['codecs.ini'],
             },
         install_requires=[
             'futures>=3.0.0,<4.0.0',

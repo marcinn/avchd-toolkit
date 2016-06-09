@@ -124,10 +124,10 @@ def main():
     from ..finder import find_files
 
     configs = (
-            os.path.join(os.path.expanduser('~'), '.config', 'avchdtranscode', 'codecs.ini'),
-            os.path.sep+os.path.join('etc', 'avchdtrans', 'codecs.ini'),
+            os.path.join(os.path.expanduser('~'), '.config', 'avchdtoolkit', 'codecs.ini'),
+            os.path.sep+os.path.join('etc', 'avchdtoolkit', 'codecs.ini'),
             os.environ.get('AVCHDTRANSCODE_CODECS', None),
-            pkg_resources.resource_filename('avchdtrans', 'codecs.ini'),
+            pkg_resources.resource_filename('avchdtoolkit', 'codecs.ini'),
         )
 
     profiles.load_profiles_config(paths=configs)
