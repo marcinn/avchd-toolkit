@@ -1,7 +1,8 @@
 import os
 import sys
 import argparse
-from . import profiles
+from .. import profiles
+from . import command, CommandError
 
 try:
     from concurrent import futures
@@ -11,10 +12,6 @@ except ImportError:
 
 def assignment(x):
     return x.split('=')
-
-
-class CommandError(Exception):
-    pass
 
 
 def make_parser():
@@ -58,12 +55,11 @@ def make_parser():
         help='export/output directory (default: same as original file)',
     )
 
-
-    parser.add_argument(
-        '-d', '--deshake', dest='deshake', action='store', type=int,
-        help='enable extra deshaking pass (requires shakiness value)',
-        metavar='SHAKINESS',
-    )
+    #parser.add_argument(
+    #    '-d', '--deshake', dest='deshake', action='store', type=int,
+    #    help='enable extra deshaking pass (requires shakiness value)',
+    #    metavar='SHAKINESS',
+    #)
 
     parser.add_argument(
         '-r', '--rename', dest='rename', action='store_true',
@@ -119,22 +115,13 @@ def make_parser():
     return parser
 
 
+
+@command
 def main():
-    try:
-        handle_main()
-    except CommandError, ex:
-        RESET_SEQ = "\033[0m"
-        COLOR_SEQ = "\033[91m"
-        sys.stdout.write(COLOR_SEQ+unicode(ex)+RESET_SEQ+'\n')
-        sys.stdout.flush()
-
-
-def handle_main():
 
     import pkg_resources
-    from .profiles import load_profiles_config
-    from .conversion import execute
-    from .finder import find_files
+    from ..conversion import execute
+    from ..finder import find_files
 
     configs = (
             os.path.join(os.path.expanduser('~'), '.config', 'avchdtranscode', 'codecs.ini'),
@@ -143,7 +130,7 @@ def handle_main():
             pkg_resources.resource_filename('avchdtrans', 'codecs.ini'),
         )
 
-    load_profiles_config(paths=configs)
+    profiles.load_profiles_config(paths=configs)
 
     parser = make_parser()
     args = parser.parse_args()

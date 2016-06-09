@@ -3,9 +3,7 @@ import os
 import sys
 import argparse
 
-
-class CommandError(Exception):
-    pass
+from . import CommandError, command
 
 
 def make_parser():
@@ -37,8 +35,9 @@ def make_parser():
     return parser
 
 
+@command
 def main():
-    from . import rename
+    from . import renamer
 
     parser = make_parser()
     args = parser.parse_args()
@@ -46,5 +45,5 @@ def main():
     kwargs = vars(args)
     inputs= kwargs.pop('inputs')
 
-    rename.pretty_batch_rename(inputs, **kwargs)
+    renamer.pretty_batch_rename(inputs, **kwargs)
 

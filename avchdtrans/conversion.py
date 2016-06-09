@@ -168,7 +168,7 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
         timecode=None, outfile=None, force_overwrite=False, export_dir=None,
         rename=False):
 
-    import avchdrenamer
+    import renamer
 
     c = container_factory(profile=profile)
     v = video_factory(profile=profile, quality=quality, pix_fmt=pix_fmt)
@@ -200,7 +200,7 @@ def execute(infile, profile, quality, deshake=None, pix_fmt=None, meta=None,
 
     if not outfile:
         if rename:
-            outfile = avchdrenamer.prettify_filename(infile)
+            outfile = renamer.prettify_filename(infile)
         else:
             outfile = infile
 

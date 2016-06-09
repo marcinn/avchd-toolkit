@@ -24,8 +24,8 @@ setup(
             ],
         entry_points = {
             'console_scripts': [
-                'avchd-renamer = avchdrenamer.cmdline:main',
-                'avchd-transcode = avchdtrans.cmdline:main',
+                'avchd-rename = avchdtrans.commands.rename:main',
+                'avchd-transcode = avchdtrans.commands.transcode:main',
                 'avchd-extract-tc = avchdtrans.commands.extract_timecodes:main',
                 ],
             },
