@@ -140,8 +140,9 @@ def fixnames(directory, prefix=None, suffix=None, date_fmt=None):
 
             print('Renaming %s -> %s' % (baseorg, baserenamed))
 
-            arc.set_timecode(baserenamed, tc)
-            arc.remove_timecode(baseorg)
+            if tc:
+                arc.set_timecode(baserenamed, tc)
+                arc.remove_timecode(baseorg)
             os.rename(original, renamed)
     finally:
         print('Updating archive database')
