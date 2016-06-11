@@ -47,6 +47,13 @@ def make_parser():
             action='store', default=None, metavar='VAR',
     )
 
+    init_parser = subparsers.add_parser(
+            'initialize', help='Initialize the archive')
+
+    init_parser.add_argument(
+            'reel', type=str, metavar='REEL',
+            help='Reel name')
+
     info_parser =  subparsers.add_parser(
             'info', help='Show information about archive')
 
@@ -177,6 +184,27 @@ def transcode(directory, **kw):
     transcode_command(**args)
 
 
+def initialize(directory, reel):
+
+    arc = archive.read(directory)
+
+    if arc.reel_name:
+        raise CommandError('The archive was already initialized')
+
+    print('Initializing archive...')
+    print('Setting reel name:', reel)
+    tag(directory, variables=[('reel', reel)])
+
+    print('Extracting timecodes')
+    dumptimecodes(directory)
+
+    print('Fixing names')
+    fixnames(directory)
+
+    print('Initialization complete.\n')
+    info(directory)
+
+
 @command
 def main():
     load_config()
@@ -194,6 +222,7 @@ def main():
             'timecodes': timecodes,
             'fix-names': fixnames,
             'transcode': transcode,
+            'initialize': initialize,
             }
 
     subcommands[cmd](**kwargs)
