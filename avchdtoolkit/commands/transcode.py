@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 from .. import profiles
-from . import command, CommandError
+from . import command, CommandError, load_config
 
 try:
     from concurrent import futures
@@ -14,13 +14,8 @@ def assignment(x):
     return x.split('=')
 
 
+
 def make_parser():
-
-    try:
-        default_profile = profiles.registry.default_key()
-    except TypeError:
-        default_profile=None
-
 
     class HelpAction(argparse._HelpAction):
         def __call__(self, parser, *args, **kw):
@@ -44,11 +39,21 @@ def make_parser():
     parser.add_argument('output', type=str,
         help='Output directory', metavar='OUTPUT')
 
+    add_parser_options(parser)
+    return parser
+
+
+def add_parser_options(parser):
     #parser.add_argument(
     #    '-d', '--deshake', dest='deshake', action='store', type=int,
     #    help='enable extra deshaking pass (requires shakiness value)',
     #    metavar='SHAKINESS',
     #)
+
+    try:
+        default_profile = profiles.registry.default_key()
+    except TypeError:
+        default_profile=None
 
     parser.add_argument(
         '-r', '--rename', dest='rename', action='store_true',
@@ -91,26 +96,11 @@ def make_parser():
 
 
 
-@command
-def main():
+def transcode_command(**userargs):
 
-    import pkg_resources
     from ..conversion import execute
     from ..finder import find_files
 
-    configs = (
-            os.path.join(os.path.expanduser('~'), '.config', 'avchdtoolkit', 'codecs.ini'),
-            os.path.sep+os.path.join('etc', 'avchdtoolkit', 'codecs.ini'),
-            os.environ.get('AVCHDTRANSCODE_CODECS', None),
-            pkg_resources.resource_filename('avchdtoolkit', 'codecs.ini'),
-        )
-
-    profiles.load_profiles_config(paths=configs)
-
-    parser = make_parser()
-    args = parser.parse_args()
-
-    userargs = dict(vars(args)) # copy
     inputs = userargs.pop('inputs')
     parallel = userargs.pop('parallel')
     usermeta = dict(userargs.pop('meta'))
@@ -148,7 +138,7 @@ def main():
         if not futures:
             raise CommandError('Please install `futures` packate to enable parallel transcoding')
 
-        if not args.force_overwrite:
+        if not userargs.get('force_overwrite'):
             raise CommandError('Parallel processing requires enabling of --force flag')
 
         asyncs = []
@@ -163,4 +153,14 @@ def main():
     else:
         for cmdargs in batch:
             execute(**cmdargs)
+
+
+
+@command
+def main():
+    load_config()
+    parser = make_parser()
+    args = parser.parse_args()
+    userargs = dict(vars(args)) # copy
+    transcode_command(**userargs)
 

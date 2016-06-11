@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
         name='avchd-toolkit',
-        version='0.2.0',
+        version='0.3.0',
         author='Marcin Nowak',
         author_email='marcin.j.nowak@gmail.com',
         zip_safe=True,
@@ -24,9 +24,10 @@ setup(
             ],
         entry_points = {
             'console_scripts': [
-                'avchd-rename = avchdtoolkit.commands.rename:main',
+                #'avchd-fix-name = avchdtoolkit.commands.rename:main',
                 'avchd-transcode = avchdtoolkit.commands.transcode:main',
                 'avchd-extract-timecodes = avchdtoolkit.commands.extract_timecodes:main',
+                'avchd-archive = avchdtoolkit.commands.archive:main',
                 ],
             },
         packages=find_packages('.', exclude=('tests','tests.*')),

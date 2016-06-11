@@ -26,11 +26,32 @@ def make_parser():
 
 
 
-def extract_timecode(path):
+def extract_timecode(path, quiet=False):
     tc = timecode.extract_timecode(path)
-    sys.stdout.write('%s: %s\n' % (path, tc))
-    sys.stdout.flush()
+    if not quiet:
+        sys.stdout.write('%s=%s\n' % (os.path.basename(path), tc))
+        sys.stdout.flush()
     return path, tc
+
+
+def extract_timecodes(directory, parallel=False, quiet=False):
+    asyncs = []
+    timecodes = []
+
+    files = finder.find_files(directory)
+
+    if parallel:
+        with futures.ProcessPoolExecutor() as ex:
+            for infile in files:
+                asyncs.append(ex.submit(extract_timecode, infile, quiet=quiet))
+
+            for obj in asyncs:
+                timecodes.append(obj.result()) # raise exception if failed
+    else:
+        for infile in files:
+            timecodes.append(extract_timecode(infile, quiet=quiet))
+
+    return timecodes
 
 
 @command
@@ -43,21 +64,6 @@ def main():
     directory = kwargs.pop('directory')
     parallel = kwargs.pop('parallel', None)
 
-    asyncs = []
-    timecodes = []
+    extract_timecodes(directory, parallel=parallel, quiet=False)
 
-    files = finder.find_files(directory)
-
-    if parallel:
-        with futures.ProcessPoolExecutor() as ex:
-            for infile in files:
-                asyncs.append(ex.submit(extract_timecode, infile))
-
-            for obj in asyncs:
-                timecodes.append(obj.result()) # raise exception if failed
-    else:
-        for infile in files:
-            timecodes.append(extract_timecode(infile))
-
-    timecode.write_timecodes_to_database(directory, timecodes)
 

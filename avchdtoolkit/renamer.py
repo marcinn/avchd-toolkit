@@ -11,8 +11,12 @@ DATE_PATTERNS = (
         )
 
 
-def prettify_filename(infile, prefix='', suffix='', date_fmt='%Y%m%d%H%M%S',
+def prettify_filename(infile, prefix=None, suffix=None, date_fmt=None,
         exiftool_tag='DateTimeOriginal'):
+
+    prefix = prefix or ''
+    suffix = suffix or ''
+    date_fmt = date_fmt or '%Y%m%d%H%M%S'
 
     with exiftool.ExifTool() as et:
         dt_str = et.get_tag(exiftool_tag, infile)
@@ -37,6 +41,7 @@ def prettify_filename(infile, prefix='', suffix='', date_fmt='%Y%m%d%H%M%S',
 def pretty_rename(filename, **prettify_args):
     new_filename = prettify_filename(filename, **prettify_args)
     os.rename(filename, new_filename)
+    return new_filename
 
 
 def pretty_batch_rename(files, **prettify_args):

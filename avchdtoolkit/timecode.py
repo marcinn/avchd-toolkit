@@ -1,6 +1,6 @@
 import csv
 import os
-from . import exiftool
+from . import exiftool, archive
 
 
 class NoTimecodeFound(Exception):
@@ -16,29 +16,21 @@ NON_NATIVE_TC_MIMETYPES = (
 
 
 def read_timecode_from_database(infile):
-    dbfile = os.path.join(os.path.dirname(infile), '.timecodes')
     basename = os.path.basename(infile)
 
-    try:
-        fh = open(dbfile)
-    except IOError:
+    arc = archive.read(os.path.dirname(infile))
+    tc = arc.get_timecode(basename)
+
+    if not tc:
         raise NoTimecodeFound
 
-    tcreader=csv.reader(fh)
-    for fname,tc in tcreader:
-        if fname==basename:
-            fh.close()
-            return tc
-
-    fh.close()
-    raise NoTimecodeFound
+    return tc
 
 
 def write_timecodes_to_database(directory, timecodes):
-    with open(os.path.join(directory, '.timecodes'), 'w') as fh:
-        tcwriter = csv.writer(fh)
-        for path,tc in timecodes:
-            tcwriter.writerow([os.path.basename(path),tc])
+    arc = archive.read(directory)
+    arc.replace_timecodes(dict(timecodes))
+    archive.save(arc)
 
 
 def extract_timecode(infile):
