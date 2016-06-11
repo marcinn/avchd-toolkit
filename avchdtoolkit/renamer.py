@@ -5,6 +5,10 @@ import re
 from . import exiftool
 
 
+class RenameError(RuntimeError):
+    pass
+
+
 DATE_PATTERNS = (
         (re.compile('^([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}).*'), '%Y-%m-%d %H:%M:%S'),
         (re.compile('^([0-9]{4}:[0-9]{2}:[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}).*'), '%Y:%m:%d %H:%M:%S'),
@@ -22,7 +26,7 @@ def prettify_filename(infile, prefix=None, suffix=None, date_fmt=None,
         dt_str = et.get_tag(exiftool_tag, infile)
 
     if not dt_str:
-        raise RuntimeError('Can\'t read datetime from file using tag=%s' % exiftool_tag)
+        raise RenameError('Can\'t read datetime from file using tag=%s' % exiftool_tag)
 
     for pattern, re_fmt in DATE_PATTERNS:
         match = pattern.match(dt_str)

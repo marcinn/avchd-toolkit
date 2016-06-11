@@ -120,12 +120,16 @@ def fixnames(directory, prefix=None, suffix=None, date_fmt=None):
 
         print('Generating new name for file `%s`...' % basename)
 
-        renamed_path = renamer.prettify_filename(
+        try:
+            renamed_path = renamer.prettify_filename(
                 path, prefix=prefix, suffix=suffix, date_fmt=date_fmt)
+        except renamer.RenameError, ex:
+            print('Can\'t generate new name for `%s`: %s' % (basename, ex))
+            continue
 
         if os.path.exists(renamed_path):
-            raise CommandError(
-                'File `%s` should be renamed to `%s`, but the target exists' % (path, renamed_path))
+            print('Can\'t rename `%s` because the target exists' % (path, renamed_path))
+            continue
 
         ops.append((path, renamed_path, tc))
 
