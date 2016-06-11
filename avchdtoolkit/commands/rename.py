@@ -8,7 +8,8 @@ from . import CommandError, command
 
 def make_parser():
 
-    parser = argparse.ArgumentParser(description='Transcode wrapper for FFMPEG')
+    parser = argparse.ArgumentParser(
+        description='Rename files based on shoot time extracted from video metadata')
 
 
     parser.add_argument(
