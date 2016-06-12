@@ -12,8 +12,11 @@ from .. import archive, finder, renamer
 
 
 def directory(x):
-    if not os.path.isdir(x):
-        raise CommandError('%s is not a directory' % x)
+    if x:
+        if not os.path.isdir(x):
+            raise CommandError('%s is not a directory' % x)
+    else:
+        x = os.getcwd()
     return x
 
 
@@ -26,15 +29,16 @@ def variable_assignment(x):
         return key.strip(), value.strip()
 
 
+def _add_directory_arg(parser):
+    parser.add_argument(
+            'directory', type=directory, default='',
+            help='Path to the archive directory',
+            metavar='ARCHIVE_DIR', nargs='?')
+
 def make_parser():
 
     parser = argparse.ArgumentParser(
         description='AVCHD archive management tool')
-
-    parser.add_argument(
-            'directory', type=directory, default=os.getcwd(),
-            help='Path to the archive directory',
-            metavar='DIRECTORY')
 
     subparsers = parser.add_subparsers(
             title='available commands', dest='command')
@@ -53,6 +57,14 @@ def make_parser():
     init_parser.add_argument(
             'reel', type=str, metavar='REEL',
             help='Reel name')
+    init_parser.add_argument(
+            '-r', '--rename', dest='fix_names',
+            default=False, action='store_true',
+            help='Auto fix names during initialization')
+    init_parser.add_argument(
+            '-t', '--extract-timecodes', dest='dump_timecodes',
+            default=False, action='store_true',
+            help='Extract timecodes during initialization')
 
     info_parser =  subparsers.add_parser(
             'info', help='Show information about archive')
@@ -83,15 +95,22 @@ def make_parser():
     transcode_parser = subparsers.add_parser('transcode',
             help='Transcode archive into proxy/intermediate')
 
+    _add_directory_arg(transcode_parser)
     transcode_parser.add_argument('output', type=directory,
             help='Output directory', metavar='OUTPUT')
 
     add_transcode_parser_options(transcode_parser)
+    _add_directory_arg(tag_parser)
+    _add_directory_arg(init_parser)
+    _add_directory_arg(info_parser)
+    _add_directory_arg(dumptc_parser)
+    _add_directory_arg(tc_parser)
+    _add_directory_arg(fixnames_parser)
 
     return parser
 
 
-def tag(directory, variables):
+def tag(directory, variables, show_info=True):
     arc = archive.read(directory)
     for key, value in variables:
         try:
@@ -99,7 +118,8 @@ def tag(directory, variables):
         except (AttributeError, TypeError):
             raise CommandError('Unsupported variable `%s`' % key)
     arc.save()
-    info(directory)
+    if show_info:
+        info(directory)
 
 
 def dumptimecodes(directory, parallel=False):
@@ -184,7 +204,7 @@ def transcode(directory, **kw):
     transcode_command(**args)
 
 
-def initialize(directory, reel):
+def initialize(directory, reel, fix_names=False, dump_timecodes=False):
 
     arc = archive.read(directory)
 
@@ -193,13 +213,15 @@ def initialize(directory, reel):
 
     print('Initializing archive...')
     print('Setting reel name:', reel)
-    tag(directory, variables=[('reel', reel)])
+    tag(directory, variables=[('reel', reel)], show_info=False)
 
-    print('Extracting timecodes')
-    dumptimecodes(directory)
+    if dump_timecodes:
+        print('Extracting timecodes')
+        dumptimecodes(directory)
 
-    print('Fixing names')
-    fixnames(directory)
+    if fix_names:
+        print('Fixing names')
+        fixnames(directory)
 
     print('Initialization complete.\n')
     info(directory)
@@ -211,8 +233,8 @@ def main():
 
     parser = make_parser()
     args = parser.parse_args()
-
     kwargs = dict(vars(args))
+
     cmd = kwargs.pop('command')
 
     subcommands = {
