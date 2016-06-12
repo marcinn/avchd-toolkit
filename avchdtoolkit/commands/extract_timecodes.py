@@ -38,7 +38,7 @@ def extract_timecodes(directory, parallel=False, quiet=False):
     asyncs = []
     timecodes = []
 
-    files = finder.find_files(directory)
+    files = finder.find_video_files(directory)
 
     if parallel:
         with futures.ProcessPoolExecutor() as ex:

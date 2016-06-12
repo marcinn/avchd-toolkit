@@ -19,6 +19,7 @@ def run_command(func_or_callable):
         sys.stdout.write('*** A program error occured! ***\n')
         sys.stdout.write(COLOR_SEQ+unicode(type(ex).__name__)+': '+unicode(ex)+RESET_SEQ+'\n')
         sys.stdout.flush()
+        raise
 
 
 def command(func):

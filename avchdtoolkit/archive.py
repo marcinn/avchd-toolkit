@@ -45,7 +45,7 @@ class Archive(object):
         ArchiveManager(self.path).save(self)
 
     def video_files(self):
-        return finder.find_files(self.path)
+        return finder.find_video_files(self.path)
 
 
 class ArchiveManager(object):
@@ -94,7 +94,7 @@ class ArchiveManager(object):
 
 
 def read(path):
-    if not len(finder.find_files(path)):
+    if not len(finder.find_video_files(path)):
         raise IOError('Not an archive. No video files in directory')
     return ArchiveManager(path).load()
 

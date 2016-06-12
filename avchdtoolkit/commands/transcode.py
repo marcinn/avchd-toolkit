@@ -99,7 +99,7 @@ def add_parser_options(parser):
 def transcode_command(**userargs):
 
     from ..conversion import execute
-    from ..finder import find_files
+    from ..finder import find_video_files
 
     inputs = userargs.pop('inputs')
     parallel = userargs.pop('parallel')
@@ -109,7 +109,7 @@ def transcode_command(**userargs):
 
     for path in inputs:
         if os.path.isdir(path):
-            files = find_files(path)
+            files = find_video_files(path)
 
             meta = {}
 

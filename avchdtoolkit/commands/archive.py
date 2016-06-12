@@ -110,6 +110,12 @@ def make_parser():
     finder_parser.add_argument(
             'terms', metavar='TERM', nargs='*', type=variable_assignment,
             help='Query terms in key=value format')
+    finder_parser.add_argument(
+            '-v', '--invert-match', action='store_true',
+            dest='invert_match', help='Show non matching archives')
+    finder_parser.add_argument(
+            '-l', '--only-filenames', action='store_true',
+            dest='filenames_only', help='Show only filenames')
 
     list_parser = subparsers.add_parser(
             'list', help='List archive contents (video files)',
@@ -153,7 +159,7 @@ def timecodes(directory, parallel=False):
 
 def fixnames(directory, prefix=None, suffix=None, date_fmt=None):
     arc = archive.read(directory)
-    files = finder.find_files(directory)
+    files = finder.find_video_files(directory)
 
     ops = []
 
@@ -243,28 +249,33 @@ def initialize(directory, reel, fix_names=False, dump_timecodes=False):
     info(directory)
 
 
-def find_archives(directory, terms):
+def find_archives(directory, terms, fullpath=False, filenames_only=False,
+        invert_match=False):
     kwargs = dict(terms)
 
-    print('Searching for archives in `%s`' % directory)
+    #print('Searching for archives in `%s`' % directory)
 
     try:
-        results = finder.find_archives(directory, **kwargs)
+        results = finder.find_archives(directory, invert_match=invert_match, **kwargs)
     except TypeError:
         raise CommandError('Unsopported terms in query')
 
-    print('Archives matching query: %s' % ' '.join(map(
-        lambda x: '%s=%s' % (x[0],x[1]), terms)))
+    if fullpath:
+        path_func = lambda x: os.path.abspath(x)
+    else:
+        path_func = lambda x: os.path.relpath(x, directory)
 
-    for result in results:
-        rel_path = os.path.relpath(result.path, directory)
-        print('%s\t:(reel=%s)' % (rel_path, result.reel_name)) 
-    if not results:
-        print('None found')
+    if filenames_only:
+        for result in results:
+            print(path_func(result.path))
+    else:
+        for result in results:
+            path = path_func(result.path)
+            print('%s:\t(reel=%s)' % (path, result.reel_name)) 
 
 
 def list_video_files(directory):
-    results = finder.find_files(directory)
+    results = finder.find_video_files(directory)
     for result in results:
         print(os.path.relpath(result, directory))
 
