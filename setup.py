@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
         name='avchd-toolkit',
-        version='0.4.1',
+        version='0.4.2',
         author='Marcin Nowak',
         author_email='marcin.j.nowak@gmail.com',
         zip_safe=True,
