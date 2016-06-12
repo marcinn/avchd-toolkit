@@ -94,6 +94,8 @@ class ArchiveManager(object):
 
 
 def read(path):
+    if not len(finder.find_files(path)):
+        raise IOError('Not an archive. No video files in directory')
     return ArchiveManager(path).load()
 
 

@@ -8,12 +8,16 @@ class CommandError(Exception):
 
 
 def run_command(func_or_callable):
+    RESET_SEQ = "\033[0m"
+    COLOR_SEQ = "\033[91m"
     try:
         func_or_callable()
     except CommandError, ex:
-        RESET_SEQ = "\033[0m"
-        COLOR_SEQ = "\033[91m"
         sys.stdout.write(COLOR_SEQ+unicode(ex)+RESET_SEQ+'\n')
+        sys.stdout.flush()
+    except Exception, ex:
+        sys.stdout.write('*** A program error occured! ***\n')
+        sys.stdout.write(COLOR_SEQ+unicode(type(ex).__name__)+': '+unicode(ex)+RESET_SEQ+'\n')
         sys.stdout.flush()
 
 

@@ -100,6 +100,17 @@ def make_parser():
             help='Output directory', metavar='OUTPUT')
 
     add_transcode_parser_options(transcode_parser)
+
+
+    finder_parser = subparsers.add_parser(
+            'find', help='Find archives matching query')
+    finder_parser.add_argument(
+            'directory', metavar='DIRECTORY', nargs='?', type=directory,
+            default=os.getcwd(), help='Search directory')
+    finder_parser.add_argument(
+            'terms', metavar='TERM', nargs='*', type=variable_assignment,
+            help='Query terms in key=value format')
+
     _add_directory_arg(tag_parser)
     _add_directory_arg(init_parser)
     _add_directory_arg(info_parser)
@@ -227,6 +238,26 @@ def initialize(directory, reel, fix_names=False, dump_timecodes=False):
     info(directory)
 
 
+def find_archives(directory, terms):
+    kwargs = dict(terms)
+
+    print('Searching for archives in `%s`' % directory)
+
+    try:
+        results = finder.find_archives(directory, recursive=True, **kwargs)
+    except TypeError:
+        raise CommandError('Unsopported terms in query')
+
+    print('Archives matching query: %s' % ' '.join(map(
+        lambda x: '%s=%s' % (x[0],x[1]), terms)))
+
+    for result in results:
+        rel_path = os.path.relpath(result.path, directory)
+        print('%s\t:(reel=%s)' % (rel_path, result.reel_name)) 
+    if not results:
+        print('None found')
+
+
 @command
 def main():
     load_config()
@@ -245,6 +276,7 @@ def main():
             'fix-names': fixnames,
             'transcode': transcode,
             'initialize': initialize,
+            'find': find_archives,
             }
 
     subcommands[cmd](**kwargs)
