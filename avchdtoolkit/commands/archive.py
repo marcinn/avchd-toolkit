@@ -111,12 +111,17 @@ def make_parser():
             'terms', metavar='TERM', nargs='*', type=variable_assignment,
             help='Query terms in key=value format')
 
+    list_parser = subparsers.add_parser(
+            'list', help='List archive contents (video files)',
+            )
+
     _add_directory_arg(tag_parser)
     _add_directory_arg(init_parser)
     _add_directory_arg(info_parser)
     _add_directory_arg(dumptc_parser)
     _add_directory_arg(tc_parser)
     _add_directory_arg(fixnames_parser)
+    _add_directory_arg(list_parser)
 
     return parser
 
@@ -244,7 +249,7 @@ def find_archives(directory, terms):
     print('Searching for archives in `%s`' % directory)
 
     try:
-        results = finder.find_archives(directory, recursive=True, **kwargs)
+        results = finder.find_archives(directory, **kwargs)
     except TypeError:
         raise CommandError('Unsopported terms in query')
 
@@ -256,6 +261,12 @@ def find_archives(directory, terms):
         print('%s\t:(reel=%s)' % (rel_path, result.reel_name)) 
     if not results:
         print('None found')
+
+
+def list_video_files(directory):
+    results = finder.find_files(directory)
+    for result in results:
+        print(os.path.relpath(result, directory))
 
 
 @command
@@ -277,6 +288,7 @@ def main():
             'transcode': transcode,
             'initialize': initialize,
             'find': find_archives,
+            'list': list_video_files,
             }
 
     subcommands[cmd](**kwargs)

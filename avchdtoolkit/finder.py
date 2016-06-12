@@ -17,12 +17,12 @@ def find_files(directory):
     return sorted(results)
 
 
-def find_archives(directory, reel=None, recursive=False):
+def find_archives(directory, reel=None):
     results = []
     if reel:
         reel_lower = reel.lower()
 
-    for dirpath, dirnames, filenames in os.walk(directory, topdown=recursive):
+    for dirpath, dirnames, filenames in os.walk(directory):
         for dirname in dirnames:
             try:
                 arc = archive.read(os.path.join(dirpath,dirname))
